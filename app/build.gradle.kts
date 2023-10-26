@@ -8,12 +8,12 @@ plugins {
 
 android {
     namespace = "com.example.showsrecommendation"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.example.showsrecommendation"
         minSdk = 24
-        targetSdk = 33
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -70,18 +70,23 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
+    // viewmodel
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
 
+    // retrofit and moshi
     implementation("com.squareup.retrofit2:converter-moshi:2.9.0")
-
     implementation("com.squareup.moshi:moshi-kotlin:1.13.0")
 
+    // coil for async image (image from url)
     implementation("io.coil-kt:coil-compose:2.2.2")
 
+    // dagger hilt for dependency injection
     implementation("com.google.dagger:hilt-android:2.44")
     kapt("com.google.dagger:hilt-android-compiler:2.44")
 
-
+    // navigation for using nav host/controller
+    val nav_version = "2.7.4"
+    implementation("androidx.navigation:navigation-compose:$nav_version")
 }
 
 kapt {

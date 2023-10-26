@@ -24,9 +24,29 @@ data class MovieApiObject(
     @Json(name = "title") val title: String,
     @Json(name = "backdrop_path") var backdropPath: String,
     @Json(name = "popularity") val popularity: Double,
+//    @Json(name = "runtime") val runtime: Int,
     @Json(name = "vote_count") val voteCount: Int,
-    @Json(name = "video") val video: Boolean,
-    @Json(name = "vote_average") val voteAverage: Double
+    @Json(name = "vote_average") val voteAverage: Double,
+
+    var posterImageUrl: String = "",
+    var backdropImageUrl: String = "",
+    var videoUrl: String = ""
+
+    )
+
+
+// Two classes for JSON object (videos of a movie)
+@JsonClass(generateAdapter = true)
+class MovieApiVideosResult(
+    @Json(name = "id") val id: Int,
+    @Json(name = "results") val movieApiVideos: List<MovieApiVideos>
+)
+
+@JsonClass(generateAdapter = true)
+class MovieApiVideos(
+    @Json(name = "key") val key: String,
+    @Json(name = "site") val site: String,
+    @Json(name = "type") val type: String
 )
 
 enum class ApiStatus {

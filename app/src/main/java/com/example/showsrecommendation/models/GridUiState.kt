@@ -1,12 +1,14 @@
-package com.example.showsrecommendation
+package com.example.showsrecommendation.models
 
 import com.example.showsrecommendation.network.MovieApiObject
+import dagger.hilt.android.scopes.ViewModelScoped
 
 private val defaultMovieApiObject = MovieApiObject(
     "", false, "", "", List(1) { 0 },
     0, "", "", "", "", 0.0,
-    0, false, 0.0)
+    0, 0.0)
 
+@ViewModelScoped
 data class GridUiState(
     var grid: Array<MovieApiObject> = Array(100) {
         defaultMovieApiObject
