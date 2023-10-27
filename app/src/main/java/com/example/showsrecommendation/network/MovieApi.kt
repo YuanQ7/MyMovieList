@@ -19,6 +19,16 @@ interface MovieApi {
         @Query("page") page: Int
     ) : MovieApiResult
 
+    @GET("{type}/{category}")
+    suspend fun getMovieGenreList(
+        @Path("type") type: String,
+        @Path("category") category: String,
+        @Query("api_key") key: String,
+        @Query("language") language: String,
+        @Query("page") page: Int,
+        @Query("with_genres") genreId: Int
+    ) : MovieApiResult
+
     @GET("{type}/{id}/videos")
     suspend fun getMovieVideos(
         @Path("type") type: String,

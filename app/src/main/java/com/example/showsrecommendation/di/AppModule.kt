@@ -1,6 +1,6 @@
 package com.example.showsrecommendation.di
 
-import com.example.showsrecommendation.models.GridUiState
+import com.example.showsrecommendation.models.MainUiState
 import com.example.showsrecommendation.network.MovieApi
 import com.example.showsrecommendation.repository.MovieRepository
 import com.example.showsrecommendation.util.Constants.Companion.API_BASE_URL
@@ -44,7 +44,7 @@ object AppModule {
     @Provides
     @Singleton
     // provides the Ui state for the viewmodel/UI
-    fun provideGridUiState() : GridUiState {
-        return GridUiState()
+    fun provideGridUiState() : MainUiState {
+        return MainUiState()
     }
 }

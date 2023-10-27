@@ -1,13 +1,17 @@
 package com.example.showsrecommendation.screens
 
+import android.util.Log
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -19,57 +23,102 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.example.showsrecommendation.models.GridUiState
-import com.example.showsrecommendation.models.GridViewModel
+import com.example.showsrecommendation.models.MainViewModel
+import kotlinx.coroutines.flow.asStateFlow
+import java.lang.Double.max
+import kotlin.math.max
+import kotlin.math.min
 
 @Composable
 fun MovieListScreen(
     navController: NavController,
-    gridViewModel: GridViewModel
+    viewModel: MainViewModel
 ) {
-    val gridUiState = gridViewModel.gridState.collectAsState()
-
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
         Column {
             Spacer(modifier = Modifier.height(10.dp))
-            MovieGrid(gridUiState = gridUiState.value)
-        }
-    }
-}
+            MovieList(
+                navController,
+                viewModel,
+                "popular",
+                modifier = Modifier.fillMaxWidth()
+                    .fillMaxHeight(0.3f)
 
-@Composable
-fun MovieGrid(
-    modifier: Modifier = Modifier,
-    gridUiState: GridUiState
-) {
-    LazyVerticalGrid(
-        modifier = modifier,
-        columns = GridCells.Fixed(count = 2)
-    ) {
-        items(count = 100) {
-            MovieCard(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(5.dp),
-                imageUrlState=gridUiState.grid[it].posterImageUrl,
-                textState=gridUiState.grid[it].videoUrl
             )
         }
     }
 }
 
+
+@Composable
+fun MovieList(
+    navController: NavController,
+    viewModel: MainViewModel,
+    genre: String,
+    modifier: Modifier = Modifier,
+) {
+    LazyRow(
+        modifier = modifier,
+        contentPadding = PaddingValues(16.dp)
+    ) {
+        val itemCount = viewModel.movieLists.value.getMovieList(genre).count()
+        val endReached = viewModel.endReached.asStateFlow().value
+
+        items(count = itemCount) {
+            if (it >= itemCount - 1 && !endReached) {
+                Log.w("TESTING", "ran")
+                viewModel.loadMoviesPaginated()
+            }
+            MovieCard(
+                it,
+                genre,
+                navController,
+                viewModel,
+                modifier = Modifier
+                    .fillMaxSize()
+            )
+        }
+    }
+//    LazyVerticalGrid(
+//        modifier = modifier,
+//        columns = GridCells.Fixed(count = 2)
+//    ) {
+//        items(count = 100) {
+//            MovieCard(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .padding(5.dp),
+//                imageUrlState=gridUiState.grid[it].posterImageUrl,
+//                textState=gridUiState.grid[it].videoUrl
+//            )
+//        }
+//    }
+}
+
 @Composable
 fun MovieCard(
+    index: Int,
+    genre: String,
+    navController: NavController,
+    viewModel: MainViewModel,
     modifier: Modifier = Modifier,
-    imageUrlState: String,
-    textState: String = ""
 ) {
+//    val listState = viewModel.popularList.collectAsState()
+    val listState = viewModel.movieLists.collectAsState()
+//    val imageUrlState = listState.value[index].posterImageUrl
+    val imageUrlState = listState.value.getMovieList(genre)[index].posterImageUrl
+    val textState = listState.value.getMovieList(genre)[index].videoUrl
+
     Card(
         modifier = modifier
     ) {
+        val isLoading = viewModel.isMovieLoading.collectAsState()
+        if (isLoading.value) {
+            CircularProgressIndicator(modifier = Modifier.fillMaxSize(0.5f))
+        }
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
