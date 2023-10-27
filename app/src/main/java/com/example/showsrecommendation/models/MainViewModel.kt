@@ -11,6 +11,7 @@ import com.example.showsrecommendation.util.Constants.Companion.IMAGE_BASE_URL
 import com.example.showsrecommendation.util.Constants.Companion.LANG_EN
 import com.example.showsrecommendation.util.Constants.Companion.VIMEO_BASE_URL
 import com.example.showsrecommendation.util.Constants.Companion.YOUTUBE_BASE_URL
+import com.example.showsrecommendation.util.Constants.Companion.genreList
 import com.example.showsrecommendation.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,10 +29,6 @@ class MainViewModel @Inject constructor (
     private val _movieLists = MutableStateFlow(mainUiState)
     val movieLists: StateFlow<MainUiState> = _movieLists.asStateFlow()
 
-    private val _popularList = MutableStateFlow(mainUiState.movieLists["popular"]!!)
-    val popularList = _popularList
-
-
     // Todo: whether api has finished retrieving movie data
     private val _isMovieLoading = MutableStateFlow(false)
     val isMovieLoading = _isMovieLoading
@@ -39,43 +36,49 @@ class MainViewModel @Inject constructor (
     private val _isVideoLoading = MutableStateFlow(false)
     val isVideoLoading = _isVideoLoading
 
-    private val _currPage = MutableStateFlow(1)
-    val currPage = _currPage
+    private val currPage = hashMapOf<String, Int>()
 
     // if we ran out of pages to get from api (highly unlikely)
-    private val _endReached = MutableStateFlow(false)
+    private val _endReached = MutableStateFlow(
+        hashMapOf<String, Boolean>()
+    )
     val endReached = _endReached
 
     private val _loadingErrorMessage = MutableStateFlow("")
     val loadingErrorMessage = _loadingErrorMessage
 
     init {
-
+        // initialize for every genre
+        for (genre in genreList) {
+            endReached.value[genre] = false
+            currPage[genre] = 1
+        }
+        loadMoviesPaginated("popular")
     }
 
-    fun loadMoviesPaginated() {
-        Log.w("TESTING", "paginating ${currPage.value} ${movieLists.value.getMovieList("popular").count()}")
-        getMovieData(true) {
-            processMovieData(it, "popular")
+    fun loadMoviesPaginated(genre: String) {
+        Log.w("TESTING", "paginating ${currPage[genre]} ${movieLists.value.getMovieList(genre).count()}")
+        getMovieData(genre, true) {
+            processMovieData(genre, it)
         }
     }
 
     private fun processMovieData(
-        response: Resource<MovieApiResult>,
-        genre: String
+        genre: String,
+        response: Resource<MovieApiResult>
     ) {
-        _isMovieLoading.value = false
+
         when (response) {
             is Resource.Error -> {
                 loadingErrorMessage.value = response.message!!
                 Log.w("TESTING", response.message)
             }
             is Resource.Success -> {
-                currPage.value++
+                currPage[genre] = currPage[genre]!! + 1
                 // result is Success, data cannot be null
                 val result = response.data!!
 
-                endReached.value = currPage.value >= result.totalPages
+                endReached.value[genre] = currPage[genre]!! >= result.totalPages
 
 //            _status.value = result.movieApiObjects[0].title + " " + result.totalResults
 //            Log.w("HELLO", "" + result.movieApiObjects.count())
@@ -99,11 +102,13 @@ class MainViewModel @Inject constructor (
 //                Log.d("TEST", uiGrid[i].posterPath + "\n" + uiGrid[i].backdropPath)
                 }
                 // notify MainActivity
-                Log.w("TESTING", newUiList[0].posterPath)
+//                Log.w("TESTING", newUiList[0].posterPath)
                 movieLists.value.addToMovieList(genre, result.movieApiObjects)
 //                movieLists.value.movieLists = HashMap(movieLists.value.movieLists)
+                _loadingErrorMessage.value = ""
             }
         }
+        _isMovieLoading.value = false
     }
 
 
@@ -128,12 +133,12 @@ class MainViewModel @Inject constructor (
         }
     }
 
-    private fun getMovieData(isMovie: Boolean, onFinish: (Resource<MovieApiResult>) -> Unit) {
+    private fun getMovieData(genre: String, isMovie: Boolean, onFinish: (Resource<MovieApiResult>) -> Unit) {
         // grab movie data response from repository
         _isMovieLoading.value = true
         viewModelScope.launch {
             onFinish(repository.getMovieList(
-                "popular", LANG_EN, currPage.value, isMovie
+                "popular", LANG_EN, currPage[genre]!!, isMovie
             ))
         }
 

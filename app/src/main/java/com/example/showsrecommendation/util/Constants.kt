@@ -8,5 +8,7 @@ class Constants {
         const val LANG_EN = "en-US"
         const val YOUTUBE_BASE_URL = "https://www.youtube.com/watch?v="
         const val VIMEO_BASE_URL = "https://vimeo.com/"
+
+        val genreList = listOf("popular", "action", "horror", "fantasy")
     }
 }

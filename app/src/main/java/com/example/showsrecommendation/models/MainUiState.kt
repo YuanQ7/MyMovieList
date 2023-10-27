@@ -1,6 +1,7 @@
 package com.example.showsrecommendation.models
 
 import com.example.showsrecommendation.network.MovieApiObject
+import com.example.showsrecommendation.util.Constants.Companion.genreList
 import dagger.hilt.android.scopes.ViewModelScoped
 
 private val defaultListObj = MovieApiObject(
@@ -8,16 +9,15 @@ private val defaultListObj = MovieApiObject(
     0, "", "", "", "", 0.0,
     0, 0.0)
 
-private val genreLists = listOf("popular", "action", "horror", "fantasy")
+
 
 @ViewModelScoped
 data class MainUiState(
     var movieLists: HashMap<String, List<MovieApiObject>> = hashMapOf()
 ) {
     init {
-         for (genre in genreLists) {
-             movieLists[genre] = listOf(defaultListObj, defaultListObj, defaultListObj, defaultListObj, defaultListObj,
-                 defaultListObj, defaultListObj, defaultListObj, defaultListObj, defaultListObj)
+         for (genre in genreList) {
+             movieLists[genre] = listOf(defaultListObj)
          }
     }
 

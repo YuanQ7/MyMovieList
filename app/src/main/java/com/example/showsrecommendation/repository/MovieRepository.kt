@@ -13,7 +13,7 @@ import javax.inject.Singleton
 
 // sample search: https://api.themoviedb.org/3/movie/550?api_key=4e20a54133b1ee1e56497bdfcac62b74
 
-private val genreStringToInt = hashMapOf<String, Int>(
+private val genreStringToInt = hashMapOf(
     "horror" to 27
 )
 
