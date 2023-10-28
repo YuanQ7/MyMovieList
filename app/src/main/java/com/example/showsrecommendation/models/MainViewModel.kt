@@ -1,6 +1,9 @@
 package com.example.showsrecommendation.models
 
 import android.util.Log
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.showsrecommendation.network.MovieApiObject
@@ -22,19 +25,20 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor (
-    private val repository: MovieRepository,
-    mainUiState: MainUiState
+    private val repository: MovieRepository
 ) : ViewModel() {
 
-    private val _movieLists = MutableStateFlow(mainUiState)
-    val movieLists: StateFlow<MainUiState> = _movieLists.asStateFlow()
+//    val _mainState = mutableStateOf(MainUiState())
+
+    private val _mainState = MutableStateFlow(MainUiState())
+    val mainState: StateFlow<MainUiState> = _mainState.asStateFlow()
 
     // Todo: whether api has finished retrieving movie data
     private val _isMovieLoading = MutableStateFlow(false)
-    val isMovieLoading = _isMovieLoading
+    val isMovieLoading = _isMovieLoading.asStateFlow()
 
     private val _isVideoLoading = MutableStateFlow(false)
-    val isVideoLoading = _isVideoLoading
+    val isVideoLoading = _isVideoLoading.asStateFlow()
 
     private val currPage = hashMapOf<String, Int>()
 
@@ -42,7 +46,7 @@ class MainViewModel @Inject constructor (
     private val _endReached = MutableStateFlow(
         hashMapOf<String, Boolean>()
     )
-    val endReached = _endReached
+    val endReached = _endReached.asStateFlow()
 
     private val _loadingErrorMessage = MutableStateFlow("")
     val loadingErrorMessage = _loadingErrorMessage
@@ -53,11 +57,12 @@ class MainViewModel @Inject constructor (
             endReached.value[genre] = false
             currPage[genre] = 1
         }
-        loadMoviesPaginated("popular")
+//        loadMoviesPaginated("popular")
     }
 
     fun loadMoviesPaginated(genre: String) {
-        Log.w("TESTING", "paginating ${currPage[genre]} ${movieLists.value.getMovieList(genre).count()}")
+        _isMovieLoading.value = true
+        Log.w("TESTING", "$genre paginating ${currPage[genre]} ${_mainState.value.getMovieList(genre).count()}")
         getMovieData(genre, true) {
             processMovieData(genre, it)
         }
@@ -67,7 +72,6 @@ class MainViewModel @Inject constructor (
         genre: String,
         response: Resource<MovieApiResult>
     ) {
-
         when (response) {
             is Resource.Error -> {
                 loadingErrorMessage.value = response.message!!
@@ -83,7 +87,6 @@ class MainViewModel @Inject constructor (
 //            _status.value = result.movieApiObjects[0].title + " " + result.totalResults
 //            Log.w("HELLO", "" + result.movieApiObjects.count())
 
-                val newUiList = movieLists.value.getMovieList(genre)
                 for (i in 0 until result.movieApiObjects.count()) {
                     // after finish getting movies, assign them to our GridStateUi state,
                     // so UI changes can reflect in MainActivity
@@ -97,15 +100,16 @@ class MainViewModel @Inject constructor (
 
                     // make paths the url to the images
                     currMovieObj.posterImageUrl = IMAGE_BASE_URL + currMovieObj.posterPath
-                    currMovieObj.backdropImageUrl = IMAGE_BASE_URL + currMovieObj.backdropPath
+//                    currMovieObj.backdropImageUrl = IMAGE_BASE_URL + currMovieObj.backdropPath
 
 //                Log.d("TEST", uiGrid[i].posterPath + "\n" + uiGrid[i].backdropPath)
                 }
                 // notify MainActivity
 //                Log.w("TESTING", newUiList[0].posterPath)
-                movieLists.value.addToMovieList(genre, result.movieApiObjects)
+                _mainState.value.addToMovieList(genre, result.movieApiObjects)
 //                movieLists.value.movieLists = HashMap(movieLists.value.movieLists)
                 _loadingErrorMessage.value = ""
+//                _mainState.value = mainState.value.copy()
             }
         }
         _isMovieLoading.value = false
@@ -136,9 +140,10 @@ class MainViewModel @Inject constructor (
     private fun getMovieData(genre: String, isMovie: Boolean, onFinish: (Resource<MovieApiResult>) -> Unit) {
         // grab movie data response from repository
         _isMovieLoading.value = true
+        _isMovieLoading.value = true
         viewModelScope.launch {
-            onFinish(repository.getMovieList(
-                "popular", LANG_EN, currPage[genre]!!, isMovie
+            onFinish(repository.getMovieGenreList(
+                LANG_EN, currPage[genre]!!, isMovie, genre
             ))
         }
 

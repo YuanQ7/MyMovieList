@@ -44,7 +44,7 @@ object AppModule {
     @Provides
     @Singleton
     // provides the Ui state for the viewmodel/UI
-    fun provideGridUiState() : MainUiState {
+    fun provideMainUiState() : MainUiState {
         return MainUiState()
     }
 }

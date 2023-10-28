@@ -10,19 +10,20 @@ private const val API_KEY = "4e20a54133b1ee1e56497bdfcac62b74"
 //4e20a54133b1ee1e56497bdfcac62b74
 interface MovieApi {
 //    @GET("?apikey=7e05f529&")
-    @GET("{type}/{category}")
-    suspend fun getMovieList(
+
+    // popular list works for type = tv, movie
+    @GET("{type}/popular")
+    suspend fun getMoviePopularList(
         @Path("type") type: String,
-        @Path("category") category: String,
         @Query("api_key") key: String,
         @Query("language") language: String,
         @Query("page") page: Int
     ) : MovieApiResult
 
-    @GET("{type}/{category}")
+    // genre list works for type = tv, movie, but genre_ids are different for each
+    @GET("discover/{type}")
     suspend fun getMovieGenreList(
         @Path("type") type: String,
-        @Path("category") category: String,
         @Query("api_key") key: String,
         @Query("language") language: String,
         @Query("page") page: Int,

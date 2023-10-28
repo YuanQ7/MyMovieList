@@ -14,7 +14,8 @@ import javax.inject.Singleton
 // sample search: https://api.themoviedb.org/3/movie/550?api_key=4e20a54133b1ee1e56497bdfcac62b74
 
 private val genreStringToInt = hashMapOf(
-    "horror" to 27
+    "horror" to 27,
+    "fantasy" to 14
 )
 
 @Singleton
@@ -31,14 +32,13 @@ class MovieRepository @Inject constructor(
         val response = try {
             movieApi.getMovieList(type, category, API_KEY, language, page)
         } catch (e: Exception) {
-            return Resource.Error("Error retrieving shows")
+            return Resource.Error("${e.message}")
         }
 //        Log.w("TEST", response)
         return Resource.Success(response)
     }
 
     suspend fun getMovieGenreList(
-        category: String,
         language: String,
         page: Int,
         isMovie: Boolean,
@@ -48,7 +48,6 @@ class MovieRepository @Inject constructor(
         val response = try {
             movieApi.getMovieGenreList(
                 type,
-                category,
                 API_KEY,
                 language,
                 page,

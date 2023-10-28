@@ -22,7 +22,7 @@ data class MovieApiObject(
     @Json(name = "original_title") val originalTitle: String,
     @Json(name = "original_language") val originalLanguage: String,
     @Json(name = "title") val title: String,
-    @Json(name = "backdrop_path") var backdropPath: String,
+//    @Json(name = "backdrop_path") var backdropPath: String,
     @Json(name = "popularity") val popularity: Double,
 //    @Json(name = "runtime") val runtime: Int,
     @Json(name = "vote_count") val voteCount: Int,

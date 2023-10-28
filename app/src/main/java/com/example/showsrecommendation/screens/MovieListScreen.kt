@@ -1,15 +1,17 @@
 package com.example.showsrecommendation.screens
 
 import android.util.Log
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -19,24 +21,22 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.showsrecommendation.models.MainViewModel
-import kotlinx.coroutines.flow.asStateFlow
-import java.lang.Double.max
-import kotlin.math.max
-import kotlin.math.min
 
 @Composable
 fun MovieListScreen(
     navController: NavController,
     viewModel: MainViewModel
 ) {
+    val mainState = viewModel.mainState.collectAsState()
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -46,10 +46,18 @@ fun MovieListScreen(
             MovieList(
                 navController,
                 viewModel,
-                "popular",
-                modifier = Modifier
-
+                "fantasy",
+                modifier = Modifier.fillMaxHeight(0.25f)
             )
+            Text(text = "Horror Movies")
+            MovieList(
+                navController,
+                viewModel,
+                "horror",
+                modifier = Modifier.fillMaxHeight(0.25f)
+            )
+//            Spacer(Modifier.height(16.dp))
+//            MovieList(navController = navController, viewModel = viewModel, genre = "horror")
         }
         val isLoading = viewModel.isMovieLoading.collectAsState()
         val loadingErrorMessage = viewModel.loadingErrorMessage.collectAsState()
@@ -58,14 +66,16 @@ fun MovieListScreen(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
+            // TODO: having this box and this if condition fixes pagination??
             if (isLoading.value) {
                 CircularProgressIndicator(
                     modifier = Modifier.fillMaxSize(0.5f)
                 )
             }
             if (loadingErrorMessage.value.isNotBlank()) {
+                Log.d("TESTING", "Box error not blank")
                 RetrySection(viewModel = viewModel) {
-                    viewModel.loadMoviesPaginated("popular")
+                    viewModel.loadMoviesPaginated("fantasy")
                 }
             }
         }
@@ -80,17 +90,20 @@ fun MovieList(
     genre: String,
     modifier: Modifier = Modifier,
 ) {
-    val movieLists = viewModel.movieLists.collectAsState()
+    val mainState = viewModel.mainState.collectAsState()
     val isMovieLoading = viewModel.isMovieLoading.collectAsState()
     val endReached = viewModel.endReached.collectAsState()
+    val loadingErrorMessage = viewModel.loadingErrorMessage.collectAsState()
+    val itemCount = mainState.value.getMovieList(genre).count()
+
+//    Log.d("TESTING", "lazyrow recomp")
     LazyRow(
         modifier = modifier,
-        contentPadding = PaddingValues(16.dp)
+        contentPadding = PaddingValues(5.dp)
     ) {
-        val itemCount = movieLists.value.getMovieList(genre).count()
         items(count = itemCount) {
             if (it >= itemCount - 1 && !endReached.value[genre]!! && !isMovieLoading.value) {
-//                Log.w("TESTING", "ran")
+                Log.w("TESTING", "$genre uiRowCount: $itemCount")
                 viewModel.loadMoviesPaginated(genre)
             }
             MovieCard(
@@ -98,8 +111,7 @@ fun MovieList(
                 genre,
                 navController,
                 viewModel,
-                modifier = Modifier
-
+                modifier = Modifier.border(BorderStroke(3.dp, Color.Black))
             )
         }
     }
@@ -132,21 +144,23 @@ fun MovieCard(
 //    val listState = viewModel.popularList.collectAsState()
 
     // get state to display
-    val listState = viewModel.movieLists.collectAsState()
-    val imageUrlState = listState.value.getMovieList(genre)[index].posterImageUrl
-    val textState = listState.value.getMovieList(genre)[index].videoUrl
+    val mainState = viewModel.mainState.collectAsState()
+    val imageUrlState = mainState.value.getMovieList(genre)[index].posterImageUrl
+    val textState = mainState.value.getMovieList(genre)[index].videoUrl
+//    Log.d("TESTING", "cardview recomp")
 
-    Card(
+    Box(
         modifier = modifier
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             val isLoading = viewModel.isMovieLoading.collectAsState()
-            if (isLoading.value) {
-                CircularProgressIndicator(modifier = Modifier.fillMaxSize(0.5f))
-            }
+            // todo: add back
+//            if (isLoading.value) {
+//                CircularProgressIndicator(modifier = Modifier.fillMaxSize(0.5f))
+//            }
             AsyncImage(
                 modifier = Modifier.fillMaxSize(),
                 model = imageUrlState,
@@ -156,11 +170,11 @@ fun MovieCard(
 //                                .build(),
                 contentDescription = "Some caption"
             )
-            Text(
-                modifier = Modifier.padding(5.dp),
-                text = textState,
-                color = Color.Black
-            )
+//            Text(
+//                modifier = Modifier.padding(5.dp),
+//                text = textState,
+//                color = Color.Black
+//            )
         }
     }
 }
