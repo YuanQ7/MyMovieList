@@ -6,23 +6,16 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -91,7 +84,7 @@ fun MovieList(
     modifier: Modifier = Modifier,
 ) {
     val mainState = viewModel.mainState.collectAsState()
-    val isMovieLoading = viewModel.isMovieLoading.collectAsState()
+    val isLoading = viewModel.isMovieLoading.collectAsState()
     val endReached = viewModel.endReached.collectAsState()
     val loadingErrorMessage = viewModel.loadingErrorMessage.collectAsState()
     val itemCount = mainState.value.getMovieList(genre).count()
@@ -102,7 +95,7 @@ fun MovieList(
         contentPadding = PaddingValues(5.dp)
     ) {
         items(count = itemCount) {
-            if (it >= itemCount - 1 && !endReached.value[genre]!! && !isMovieLoading.value) {
+            if (it >= itemCount - 1 && !endReached.value[genre]!! && !isLoading.value) {
                 Log.w("TESTING", "$genre uiRowCount: $itemCount")
                 viewModel.loadMoviesPaginated(genre)
             }

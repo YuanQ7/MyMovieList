@@ -30,7 +30,7 @@ class MovieRepository @Inject constructor(
     ) : Resource<MovieApiResult> {
         val type = if (isMovie) "movie" else "tv"
         val response = try {
-            movieApi.getMovieList(type, category, API_KEY, language, page)
+            movieApi.getMoviePopularList(type, API_KEY, language, page)
         } catch (e: Exception) {
             return Resource.Error("${e.message}")
         }
