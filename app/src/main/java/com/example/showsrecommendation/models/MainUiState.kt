@@ -16,10 +16,7 @@ data class MainUiState(
 ) {
     init {
          for (genre in genreList) {
-             movieLists[genre] = listOf(defaultListObj,defaultListObj,defaultListObj
-             ,defaultListObj,defaultListObj,defaultListObj,defaultListObj,defaultListObj
-                 ,defaultListObj,defaultListObj
-                 ,defaultListObj,defaultListObj,defaultListObj,defaultListObj)
+             movieLists[genre] = listOf(defaultListObj)
          }
     }
 
@@ -38,11 +35,6 @@ data class MainUiState(
                movieLists[genre] = movieLists[genre]!! + list
             }
             Log.w("TESTING", "$genre listcount: ${movieLists[genre]!!.count()}")
-        }
-    }
-    fun setMovieList(genre: String, list: List<MovieApiObject>) {
-        if (genre in movieLists) {
-            movieLists[genre] = list
         }
     }
 }

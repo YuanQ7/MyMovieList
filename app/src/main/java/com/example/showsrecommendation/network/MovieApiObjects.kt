@@ -30,7 +30,8 @@ data class MovieApiObject(
 
     var posterImageUrl: String = "",
     var backdropImageUrl: String = "",
-    var videoUrl: String = ""
+    var videoUrl: String = "",
+    var ytVideoKey: String = ""
 
     )
 

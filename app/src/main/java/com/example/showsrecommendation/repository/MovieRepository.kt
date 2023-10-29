@@ -23,7 +23,6 @@ class MovieRepository @Inject constructor(
     private val movieApi: MovieApi
 ) {
     suspend fun getMovieList(
-        category: String,
         language: String,
         page: Int,
         isMovie: Boolean

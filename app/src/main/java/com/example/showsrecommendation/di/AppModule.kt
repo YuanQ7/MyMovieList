@@ -1,5 +1,8 @@
 package com.example.showsrecommendation.di
 
+import android.app.Application
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
 import com.example.showsrecommendation.models.MainUiState
 import com.example.showsrecommendation.network.MovieApi
 import com.example.showsrecommendation.repository.MovieRepository
@@ -9,6 +12,7 @@ import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.scopes.ViewModelScoped
 import dagger.hilt.components.SingletonComponent
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
@@ -17,6 +21,13 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+
+    @Provides
+    @Singleton
+    fun provideExoPlayer(app: Application): Player {
+        return ExoPlayer.Builder(app)
+            .build()
+    }
 
     @Provides
     @Singleton

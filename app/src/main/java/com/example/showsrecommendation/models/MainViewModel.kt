@@ -1,21 +1,29 @@
 package com.example.showsrecommendation.models
 
+import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import com.example.showsrecommendation.network.MovieApiObject
 import com.example.showsrecommendation.network.MovieApiResult
 import com.example.showsrecommendation.network.MovieApiVideosResult
 import com.example.showsrecommendation.repository.MovieRepository
 import com.example.showsrecommendation.util.Constants.Companion.IMAGE_BASE_URL
 import com.example.showsrecommendation.util.Constants.Companion.LANG_EN
+import com.example.showsrecommendation.util.Constants.Companion.PLAYER_URI_SAVE_KEY
 import com.example.showsrecommendation.util.Constants.Companion.VIMEO_BASE_URL
 import com.example.showsrecommendation.util.Constants.Companion.YOUTUBE_BASE_URL
 import com.example.showsrecommendation.util.Constants.Companion.genreList
 import com.example.showsrecommendation.util.Resource
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,10 +33,15 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor (
-    private val repository: MovieRepository
+    private val repository: MovieRepository,
+    private val savedStateHandle: SavedStateHandle,
+    val videoPlayer: Player
 ) : ViewModel() {
 
-//    val _mainState = mutableStateOf(MainUiState())
+//    private val videoUri = savedStateHandle.getStateFlow(
+//        PLAYER_URI_SAVE_KEY, MediaItem.fromUri())
+//    )
+    var ytPlayer: YouTubePlayer? = null
 
     private val _mainState = MutableStateFlow(MainUiState())
     val mainState: StateFlow<MainUiState> = _mainState.asStateFlow()
@@ -52,6 +65,7 @@ class MainViewModel @Inject constructor (
     val loadingErrorMessage = _loadingErrorMessage
 
     init {
+        videoPlayer.prepare()
         // initialize for every genre
         for (genre in genreList) {
             endReached.value[genre] = false
@@ -59,6 +73,32 @@ class MainViewModel @Inject constructor (
         }
 //        loadMoviesPaginated("popular")
     }
+
+    fun addMediaUri(uri: String) {
+        if (videoPlayer.mediaItemCount < 5) {
+            videoPlayer.setMediaItem(MediaItem.fromUri(uri))
+//            playVideo()
+        } else if (videoPlayer.mediaItemCount == 5) {
+
+        }
+//        Log.d("TESTING", "videoPlayer media count: ${videoPlayer.mediaItemCount}")
+//        playVideo()
+    }
+
+    fun playVideo() {
+        videoPlayer.setMediaItem(
+            if (videoPlayer.mediaItemCount > 0) {
+//                Log.d("TESTING", "first video: ${videoPlayer.getMediaItemAt(0)}")
+                videoPlayer.getMediaItemAt(0)
+            } else {
+                return
+            }
+        )
+    }
+
+//    fun playVideo(uri: Uri) {
+//        video
+//    }
 
     fun loadMoviesPaginated(genre: String) {
         _isMovieLoading.value = true
@@ -128,10 +168,13 @@ class MainViewModel @Inject constructor (
                 if (trailers.isNotEmpty()) {
                     if (trailers[0].site == "YouTube") {
                         currMovieObj.videoUrl = YOUTUBE_BASE_URL + trailers[0].key
+                        currMovieObj.ytVideoKey = trailers[0].key
                     } else if (trailers[0].site == "Vimeo") {
                         currMovieObj.videoUrl = VIMEO_BASE_URL + trailers[0].key
                     }
                 }
+//                Log.d("TESTINGVIDEO", "added ${currMovieObj.videoUrl}")
+//                addMediaUri(currMovieObj.videoUrl)
 //                Log.w("TESTING", currMovieObj.videoUrl)
             }
         }
@@ -164,6 +207,19 @@ class MainViewModel @Inject constructor (
                 currMovieObj.id, LANG_EN, true
             ))
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        videoPlayer.release()
+    }
+}
+
+class youTubePlayer(
+) : AbstractYouTubePlayerListener() {
+    override fun onReady(youTubePlayer: YouTubePlayer) {
+        super.onReady(youTubePlayer)
+        youTubePlayer
     }
 }
 
