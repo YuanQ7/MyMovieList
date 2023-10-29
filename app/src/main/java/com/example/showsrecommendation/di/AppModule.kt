@@ -22,6 +22,8 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
+
+    // exoplayer unused
     @Provides
     @Singleton
     fun provideExoPlayer(app: Application): Player {

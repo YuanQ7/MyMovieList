@@ -1,5 +1,7 @@
 package com.example.showsrecommendation.util
 
+import com.example.showsrecommendation.models.MovieListItem
+
 class Constants {
     companion object {
         const val API_BASE_URL = "https://api.themoviedb.org/3/"
@@ -12,5 +14,10 @@ class Constants {
         const val PLAYER_URI_SAVE_KEY = "uriSaveKey"
 
         val genreList = listOf("popular", "action", "horror", "fantasy")
+
+        val defaultListItem = MovieListItem(
+            "", "", "", false, listOf(1), 0,
+            0.0, "", "", "")
+
     }
 }

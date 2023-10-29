@@ -19,6 +19,7 @@ import com.example.showsrecommendation.util.Constants.Companion.LANG_EN
 import com.example.showsrecommendation.util.Constants.Companion.PLAYER_URI_SAVE_KEY
 import com.example.showsrecommendation.util.Constants.Companion.VIMEO_BASE_URL
 import com.example.showsrecommendation.util.Constants.Companion.YOUTUBE_BASE_URL
+import com.example.showsrecommendation.util.Constants.Companion.defaultListItem
 import com.example.showsrecommendation.util.Constants.Companion.genreList
 import com.example.showsrecommendation.util.Resource
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants
@@ -34,8 +35,9 @@ import javax.inject.Inject
 @HiltViewModel
 class MainViewModel @Inject constructor (
     private val repository: MovieRepository,
+    private val mainUiState: MainUiState,
     private val savedStateHandle: SavedStateHandle,
-    val videoPlayer: Player
+//    val videoPlayer: Player
 ) : ViewModel() {
 
 //    private val videoUri = savedStateHandle.getStateFlow(
@@ -43,8 +45,14 @@ class MainViewModel @Inject constructor (
 //    )
     var ytPlayer: YouTubePlayer? = null
 
-    private val _mainState = MutableStateFlow(MainUiState())
+    private val _mainState = MutableStateFlow(mainUiState)
     val mainState: StateFlow<MainUiState> = _mainState.asStateFlow()
+
+    private val _currMovieItem = MutableStateFlow(defaultListItem)
+    val currMovieItem = _currMovieItem.asStateFlow()
+
+    // to avoid any possible unnecessary recompositions, use key-value pair instead?
+//    private val _horrorList = MutableStateFlow(mainUiState.movieLists.entries)
 
     // Todo: whether api has finished retrieving movie data
     private val _isMovieLoading = MutableStateFlow(false)
@@ -65,7 +73,7 @@ class MainViewModel @Inject constructor (
     val loadingErrorMessage = _loadingErrorMessage
 
     init {
-        videoPlayer.prepare()
+//        videoPlayer.prepare()
         // initialize for every genre
         for (genre in genreList) {
             endReached.value[genre] = false
@@ -74,27 +82,28 @@ class MainViewModel @Inject constructor (
 //        loadMoviesPaginated("popular")
     }
 
-    fun addMediaUri(uri: String) {
-        if (videoPlayer.mediaItemCount < 5) {
-            videoPlayer.setMediaItem(MediaItem.fromUri(uri))
-//            playVideo()
-        } else if (videoPlayer.mediaItemCount == 5) {
-
-        }
-//        Log.d("TESTING", "videoPlayer media count: ${videoPlayer.mediaItemCount}")
-//        playVideo()
-    }
-
-    fun playVideo() {
-        videoPlayer.setMediaItem(
-            if (videoPlayer.mediaItemCount > 0) {
-//                Log.d("TESTING", "first video: ${videoPlayer.getMediaItemAt(0)}")
-                videoPlayer.getMediaItemAt(0)
-            } else {
-                return
-            }
-        )
-    }
+    // Exoplayer methods (unused)
+//    fun addMediaUri(uri: String) {
+//        if (videoPlayer.mediaItemCount < 5) {
+//            videoPlayer.setMediaItem(MediaItem.fromUri(uri))
+////            playVideo()
+//        } else if (videoPlayer.mediaItemCount == 5) {
+//
+//        }
+////        Log.d("TESTING", "videoPlayer media count: ${videoPlayer.mediaItemCount}")
+////        playVideo()
+//    }
+//
+//    fun playVideo() {
+//        videoPlayer.setMediaItem(
+//            if (videoPlayer.mediaItemCount > 0) {
+////                Log.d("TESTING", "first video: ${videoPlayer.getMediaItemAt(0)}")
+//                videoPlayer.getMediaItemAt(0)
+//            } else {
+//                return
+//            }
+//        )
+//    }
 
 //    fun playVideo(uri: Uri) {
 //        video
@@ -146,13 +155,29 @@ class MainViewModel @Inject constructor (
                 }
                 // notify MainActivity
 //                Log.w("TESTING", newUiList[0].posterPath)
-                _mainState.value.addToMovieList(genre, result.movieApiObjects)
+                _mainState.value.addToMovieList(genre,
+                    result.movieApiObjects.map {
+                        MovieListItem(
+                            it.title,
+                            it.overview,
+                            convertDate(it.releaseDate),
+                            it.adult,
+                            it.genreIds,
+                            it.voteCount,
+                            it.voteAverage,
+                            it.posterImageUrl,
+                            it.backdropImageUrl,
+                            it.ytVideoKey
+                        )
+                    }
+                )
 //                movieLists.value.movieLists = HashMap(movieLists.value.movieLists)
                 _loadingErrorMessage.value = ""
 //                _mainState.value = mainState.value.copy()
             }
         }
         _isMovieLoading.value = false
+        _currMovieItem.value = mainState.value.getMovieList(genre)[0]
     }
 
 
@@ -165,13 +190,35 @@ class MainViewModel @Inject constructor (
             is Resource.Success -> {
                 val trailers = response.data!!.movieApiVideos
 
-                if (trailers.isNotEmpty()) {
-                    if (trailers[0].site == "YouTube") {
-                        currMovieObj.videoUrl = YOUTUBE_BASE_URL + trailers[0].key
-                        currMovieObj.ytVideoKey = trailers[0].key
-                    } else if (trailers[0].site == "Vimeo") {
-                        currMovieObj.videoUrl = VIMEO_BASE_URL + trailers[0].key
+                // if no video data, skip
+                if (trailers.isEmpty()) {
+                    return
+                }
+
+                // in case there are no trailers, use anything else
+                var cachedKey = ""
+                var foundTeaser = false
+                var foundTrailer = false
+
+                for (trailer in trailers) {
+                    if (trailer.site == "YouTube") {
+                        if (trailer.type.contains("Trailer")) {
+//                            currMovieObj.videoUrl = YOUTUBE_BASE_URL + trailers[0].key
+                            currMovieObj.ytVideoKey = trailer.key
+                            foundTrailer = true
+                            break
+                        } else if (trailer.type.contains("Teaser")) {
+                            currMovieObj.ytVideoKey = trailer.key
+                            foundTeaser = true
+                        } else if (!foundTeaser) {
+                            cachedKey = trailer.key
+                        }
                     }
+                }
+
+                // if currMovieObj.ytVideoKey is blank, use any video (if any) as trailer
+                if (!foundTeaser and !foundTrailer) {
+                    currMovieObj.ytVideoKey = cachedKey
                 }
 //                Log.d("TESTINGVIDEO", "added ${currMovieObj.videoUrl}")
 //                addMediaUri(currMovieObj.videoUrl)
@@ -209,17 +256,51 @@ class MainViewModel @Inject constructor (
         }
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        videoPlayer.release()
+    private fun convertDate(date: String) : String {
+        val dates = date.split("-")
+        val year = dates[0]
+
+        var month = dates[1]
+
+        if (dates.count() > 1) {
+            // maybe convert to when statement
+            if (month == "1") {
+                month = "January"
+            } else if (month == "2") {
+                month = "February"
+            } else if (month == "3") {
+                month = "March"
+            } else if (month == "4") {
+                month = "April"
+            } else if (month == "5") {
+                month = "May"
+            } else if (month == "6") {
+                month = "June"
+            } else if (month == "7") {
+                month = "July"
+            } else if (month == "8") {
+                month = "August"
+            } else if (month == "9") {
+                month = "September"
+            } else if (month == "10") {
+                month = "October"
+            } else if (month == "11") {
+                month = "November"
+            } else if (month == "12") {
+                month = "December"
+            } else {
+                month = ""
+            }
+        }
+        return "$month $year"
+
     }
+
+//    override fun onCleared() {
+//        super.onCleared()
+//        videoPlayer.release()
+//    }
 }
 
-class youTubePlayer(
-) : AbstractYouTubePlayerListener() {
-    override fun onReady(youTubePlayer: YouTubePlayer) {
-        super.onReady(youTubePlayer)
-        youTubePlayer
-    }
-}
+
 

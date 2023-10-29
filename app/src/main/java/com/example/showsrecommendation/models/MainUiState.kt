@@ -2,32 +2,29 @@ package com.example.showsrecommendation.models
 
 import android.util.Log
 import com.example.showsrecommendation.network.MovieApiObject
+import com.example.showsrecommendation.util.Constants.Companion.defaultListItem
 import com.example.showsrecommendation.util.Constants.Companion.genreList
 import dagger.hilt.android.scopes.ViewModelScoped
-
-private val defaultListObj = MovieApiObject(
-    "", false, "", "", List(1) { 0 },
-    0, "", "", "", 0.0,
-    0, 0.0)
+import okhttp3.internal.immutableListOf
 
 @ViewModelScoped
 data class MainUiState(
-    var movieLists: HashMap<String, List<MovieApiObject>> = hashMapOf()
+    var movieLists: HashMap<String, List<MovieListItem>> = hashMapOf()
 ) {
     init {
          for (genre in genreList) {
-             movieLists[genre] = listOf(defaultListObj)
+             movieLists[genre] = listOf(defaultListItem)
          }
     }
 
-    fun getMovieList(genre: String) : List<MovieApiObject> {
+    fun getMovieList(genre: String) : List<MovieListItem> {
         return movieLists.getOrDefault(genre, movieLists["popular"]!!)
     }
 
-    fun addToMovieList(genre: String, list: List<MovieApiObject>) {
+    fun addToMovieList(genre: String, list: List<MovieListItem>) {
         if (genre in movieLists) {
 //            Log.w("TESTING", "$genre in movieLists")
-            if (movieLists[genre]!![0] === defaultListObj) {
+            if (movieLists[genre]!![0] === defaultListItem) {
                 // clear the dummy item
                 movieLists[genre] = list.toList()
             } else {
