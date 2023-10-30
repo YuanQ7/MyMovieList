@@ -13,11 +13,5 @@ class Constants {
         const val VIMEO_BASE_URL = "https://vimeo.com/"
         const val PLAYER_URI_SAVE_KEY = "uriSaveKey"
 
-        val genreList = listOf("popular", "action", "horror", "fantasy")
-
-        val defaultListItem = MovieListItem(
-            "", "", "", false, listOf(1), 0,
-            0.0, "", "", "")
-
     }
 }

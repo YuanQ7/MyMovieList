@@ -2,14 +2,13 @@ package com.example.showsrecommendation.models
 
 import android.util.Log
 import com.example.showsrecommendation.network.MovieApiObject
-import com.example.showsrecommendation.util.Constants.Companion.defaultListItem
-import com.example.showsrecommendation.util.Constants.Companion.genreList
+import com.example.showsrecommendation.util.Utils.Companion.defaultListItem
+import com.example.showsrecommendation.util.Utils.Companion.genreList
 import dagger.hilt.android.scopes.ViewModelScoped
-import okhttp3.internal.immutableListOf
 
 @ViewModelScoped
 data class MainUiState(
-    var movieLists: HashMap<String, List<MovieListItem>> = hashMapOf()
+    val movieLists: HashMap<String, List<MovieListItem>> = hashMapOf()
 ) {
     init {
          for (genre in genreList) {
@@ -18,7 +17,8 @@ data class MainUiState(
     }
 
     fun getMovieList(genre: String) : List<MovieListItem> {
-        return movieLists.getOrDefault(genre, movieLists["popular"]!!)
+        Log.d("TESTING", "getting genre list of $genre")
+        return movieLists[genre]!!
     }
 
     fun addToMovieList(genre: String, list: List<MovieListItem>) {

@@ -5,6 +5,7 @@ import com.example.showsrecommendation.network.MovieApiResult
 import com.example.showsrecommendation.network.MovieApiVideosResult
 import com.example.showsrecommendation.util.Constants.Companion.API_KEY
 import com.example.showsrecommendation.util.Resource
+import com.example.showsrecommendation.util.Utils.Companion.genreStringToInt
 import java.lang.Exception
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -13,10 +14,6 @@ import javax.inject.Singleton
 
 // sample search: https://api.themoviedb.org/3/movie/550?api_key=4e20a54133b1ee1e56497bdfcac62b74
 
-private val genreStringToInt = hashMapOf(
-    "horror" to 27,
-    "fantasy" to 14
-)
 
 @Singleton
 class MovieRepository @Inject constructor(
@@ -50,7 +47,7 @@ class MovieRepository @Inject constructor(
                 API_KEY,
                 language,
                 page,
-                genreStringToInt.getOrDefault(genre, 27))
+                genreStringToInt[genre]!!)
         } catch (e: Exception) {
             return Resource.Error("Error retrieving shows")
         }

@@ -19,13 +19,15 @@ import com.example.showsrecommendation.util.Constants.Companion.LANG_EN
 import com.example.showsrecommendation.util.Constants.Companion.PLAYER_URI_SAVE_KEY
 import com.example.showsrecommendation.util.Constants.Companion.VIMEO_BASE_URL
 import com.example.showsrecommendation.util.Constants.Companion.YOUTUBE_BASE_URL
-import com.example.showsrecommendation.util.Constants.Companion.defaultListItem
-import com.example.showsrecommendation.util.Constants.Companion.genreList
 import com.example.showsrecommendation.util.Resource
+import com.example.showsrecommendation.util.Utils.Companion.defaultListItem
+import com.example.showsrecommendation.util.Utils.Companion.genreList
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -54,8 +56,14 @@ class MainViewModel @Inject constructor (
     // to avoid any possible unnecessary recompositions, use key-value pair instead?
 //    private val _horrorList = MutableStateFlow(mainUiState.movieLists.entries)
 
-    // Todo: whether api has finished retrieving movie data
-    private val _isMovieLoading = MutableStateFlow(false)
+    // in case there's internet error
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading = _isLoading.asStateFlow()
+
+    // display circular progression bar for each movie
+    private val _isMovieLoading = MutableStateFlow(
+        hashMapOf<String, Boolean>()
+    )
     val isMovieLoading = _isMovieLoading.asStateFlow()
 
     private val _isVideoLoading = MutableStateFlow(false)
@@ -73,44 +81,19 @@ class MainViewModel @Inject constructor (
     val loadingErrorMessage = _loadingErrorMessage
 
     init {
-//        videoPlayer.prepare()
         // initialize for every genre
         for (genre in genreList) {
             endReached.value[genre] = false
+            isMovieLoading.value[genre] = false
             currPage[genre] = 1
         }
-//        loadMoviesPaginated("popular")
     }
 
-    // Exoplayer methods (unused)
-//    fun addMediaUri(uri: String) {
-//        if (videoPlayer.mediaItemCount < 5) {
-//            videoPlayer.setMediaItem(MediaItem.fromUri(uri))
-////            playVideo()
-//        } else if (videoPlayer.mediaItemCount == 5) {
-//
-//        }
-////        Log.d("TESTING", "videoPlayer media count: ${videoPlayer.mediaItemCount}")
-////        playVideo()
-//    }
-//
-//    fun playVideo() {
-//        videoPlayer.setMediaItem(
-//            if (videoPlayer.mediaItemCount > 0) {
-////                Log.d("TESTING", "first video: ${videoPlayer.getMediaItemAt(0)}")
-//                videoPlayer.getMediaItemAt(0)
-//            } else {
-//                return
-//            }
-//        )
-//    }
-
-//    fun playVideo(uri: Uri) {
-//        video
-//    }
 
     fun loadMoviesPaginated(genre: String) {
-        _isMovieLoading.value = true
+        _isLoading.value = true
+        _isMovieLoading.value[genre] = true
+
         Log.w("TESTING", "$genre paginating ${currPage[genre]} ${_mainState.value.getMovieList(genre).count()}")
         getMovieData(genre, true) {
             processMovieData(genre, it)
@@ -176,7 +159,8 @@ class MainViewModel @Inject constructor (
 //                _mainState.value = mainState.value.copy()
             }
         }
-        _isMovieLoading.value = false
+        _isLoading.value = false
+        _isMovieLoading.value[genre] = false
         _currMovieItem.value = mainState.value.getMovieList(genre)[0]
     }
 
@@ -229,8 +213,6 @@ class MainViewModel @Inject constructor (
 
     private fun getMovieData(genre: String, isMovie: Boolean, onFinish: (Resource<MovieApiResult>) -> Unit) {
         // grab movie data response from repository
-        _isMovieLoading.value = true
-        _isMovieLoading.value = true
         viewModelScope.launch {
             onFinish(repository.getMovieGenreList(
                 LANG_EN, currPage[genre]!!, isMovie, genre
