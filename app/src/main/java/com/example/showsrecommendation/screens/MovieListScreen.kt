@@ -2,7 +2,9 @@ package com.example.showsrecommendation.screens
 
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -23,6 +26,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,6 +46,7 @@ import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.You
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.options.IFramePlayerOptions
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MovieListScreen(
     navController: NavController,
@@ -51,6 +58,11 @@ fun MovieListScreen(
     ) {
         val isLoading = viewModel.isLoading.collectAsState()
         val loadingErrorMessage = viewModel.loadingErrorMessage.collectAsState()
+
+        // TODO: how to snap to very top of column, instead of middle?
+        // likewise for each movie list row
+        val columnState = rememberLazyListState()
+        val snapBehavior = rememberSnapFlingBehavior(lazyListState = columnState)
 
         Column {
             YouTubeVideoPlayer(
@@ -67,10 +79,23 @@ fun MovieListScreen(
             Spacer(Modifier.height(8.dp))
             LazyColumn(
                 modifier = Modifier.weight(0.3f),
-                contentPadding = PaddingValues(8.dp)
+                contentPadding = PaddingValues(8.dp),
+                state = columnState,
+                flingBehavior = snapBehavior
             ) {
                 val countItems = genreList.count()
+
+                // TODO: to make infinite scrolling more pleasing, add refresh option when user
+                // TODO: reaches end of movie lists, and scroll with animation to top
+
                 items(count = countItems) {
+                    // disabling scrolling using this causes a lot of recompositions
+//                    val isFocused = if (columnState.firstVisibleItemIndex == 0) {
+//                        it == 0
+//                    } else {
+//                        it == columnState.firstVisibleItemIndex + 1
+//                    }
+
                     val genre = genreList[it]
                     Text(
                         text = "$genre Movies",
@@ -80,6 +105,7 @@ fun MovieListScreen(
                         navController,
                         viewModel,
                         genre,
+//                        isFocused,
                         modifier = Modifier
                     )
                 }
@@ -117,6 +143,7 @@ fun MainMovieDetails(
     modifier: Modifier = Modifier
 ) {
     val currMovieItem = viewModel.currMovieItem.collectAsState()
+
     Box(modifier = modifier) {
         Column {
             Row (
@@ -141,23 +168,30 @@ fun MainMovieDetails(
 }
 
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MovieList(
     navController: NavController,
     viewModel: MainViewModel,
     genre: String,
+//    isFocusedState: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val mainState = viewModel.mainState.collectAsState()
     val isMovieLoading = viewModel.isMovieLoading.collectAsState()
     val endReached = viewModel.endReached.collectAsState()
-    val loadingErrorMessage = viewModel.loadingErrorMessage.collectAsState()
+//    val loadingErrorMessage = viewModel.loadingErrorMessage.collectAsState()
     val itemCount = mainState.value.getMovieList(genre).count()
 
-//    Log.d("TESTING", "lazyrow recomp")
+    val lazyRowState = rememberLazyListState()
+    val snapBehavior = rememberSnapFlingBehavior(lazyListState = lazyRowState)
+
     LazyRow(
         modifier = modifier,
-        contentPadding = PaddingValues(5.dp)
+        contentPadding = PaddingValues(5.dp),
+        state = lazyRowState,
+        flingBehavior = snapBehavior,
+//        userScrollEnabled = isFocusedState
     ) {
         items(count = itemCount) {
             if (it >= itemCount - 1 && !endReached.value[genre]!! && !isMovieLoading.value[genre]!!) {
@@ -169,7 +203,8 @@ fun MovieList(
                 it,
                 viewModel,
                 navController,
-                modifier = Modifier.border(BorderStroke(3.dp, Color.Black))
+                modifier = Modifier
+                    .border(BorderStroke(3.dp, Color.Black))
                     .height(200.dp)
                     .aspectRatio(1 / 1.5f)
             )
